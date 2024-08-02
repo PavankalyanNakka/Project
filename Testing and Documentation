@@ -1,0 +1,20 @@
+dfx deploy
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_send_tokens() {
+        let mut token = Token::new();
+        token.receive_tokens("user1".to_string(), 100);
+        assert!(token.send_tokens("user1".to_string(), "user2".to_string(), 50).is_ok());
+        assert_eq!(token.get_balance("user1".to_string()), 50);
+        assert_eq!(token.get_balance("user2".to_string()), 50);
+    }
+}
+cargo test
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin <YOUR_REPOSITORY_URL>
+git push -u origin master
