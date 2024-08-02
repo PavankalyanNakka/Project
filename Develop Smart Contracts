@@ -1,0 +1,69 @@
+use ic_cdk::export::candid::{CandidType, Deserialize};
+use ic_cdk::api::call;
+use ic_cdk::storage;
+use ic_cdk::print;
+use std::collections::HashMap;
+
+#[derive(CandidType, Deserialize, Clone)]
+pub struct Token {
+    pub balance: HashMap<String, u64>,
+}
+
+impl Token {
+    pub fn new() -> Self {
+        Token {
+            balance: HashMap::new(),
+        }
+    }
+
+    pub fn send_tokens(&mut self, from: String, to: String, amount: u64) -> Result<(), String> {
+        let from_balance = self.balance.entry(from.clone()).or_insert(0);
+        if *from_balance < amount {
+            return Err("Insufficient balance".to_string());
+        }
+
+        *from_balance -= amount;
+        let to_balance = self.balance.entry(to).or_insert(0);
+        *to_balance += amount;
+        Ok(())
+    }
+
+    pub fn receive_tokens(&mut self, user: String, amount: u64) {
+        let balance = self.balance.entry(user).or_insert(0);
+        *balance += amount;
+    }
+
+    pub fn get_balance(&self, user: String) -> u64 {
+        *self.balance.get(&user).unwrap_or(&0)
+    }
+}
+
+#[ic_cdk::update]
+pub fn send_tokens(to: String, amount: u64) -> Result<(), String> {
+    let mut token = Token::new(); // Load from storage in a real implementation
+    token.send_tokens(ic_cdk::caller().to_string(), to, amount)
+}
+
+#[ic_cdk::query]
+pub fn get_balance(user: String) -> u64 {
+    let token = Token::new(); // Load from storage in a real implementation
+    token.get_balance(user)
+}
+use ic_cdk::export::candid::{CandidType, Deserialize};
+use ic_cdk::api::call;
+use ic_cdk::storage;
+
+#[derive(CandidType, Deserialize)]
+pub struct Wallet;
+
+#[ic_cdk::update]
+pub async fn send_tokens(to: String, amount: u64) -> Result<(), String> {
+    let token_canister_id = "YOUR_TOKEN_CANISTER_ID".to_string();
+    call::call(token_canister_id, "send_tokens", (to, amount)).await
+}
+
+#[ic_cdk::query]
+pub async fn get_balance() -> u64 {
+    let token_canister_id = "YOUR_TOKEN_CANISTER_ID".to_string();
+    call::call(token_canister_id, "get_balance", (ic_cdk::caller().to_string())).await
+}
